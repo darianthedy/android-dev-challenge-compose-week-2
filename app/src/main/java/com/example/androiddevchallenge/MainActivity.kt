@@ -21,12 +21,31 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HourglassDisabled
 import androidx.compose.material.icons.filled.HourglassTop
@@ -44,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.androiddevchallenge.ui.theme.MyTheme
-import kotlin.math.roundToInt
 
 @ExperimentalAnimationApi
 @ExperimentalComposeUiApi
@@ -63,7 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class MainViewModelProviderFactory: ViewModelProvider.Factory {
+class MainViewModelProviderFactory : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T =
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
@@ -79,7 +97,7 @@ class MainViewModelProviderFactory: ViewModelProvider.Factory {
 @Composable
 fun MyApp(mainViewModel: MainViewModel) {
     Surface(color = MaterialTheme.colors.background) {
-        Column (
+        Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -222,7 +240,7 @@ private fun TimerView(mainViewModel: MainViewModel) {
                 mainViewModel.onTimerButtonPressed()
             }
         ) {
-            Column (
+            Column(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -262,11 +280,12 @@ private fun TimerView(mainViewModel: MainViewModel) {
 @Composable
 fun LightPreview() {
     MyTheme {
-        StopTimerView(MainViewModel(object: Timer {
-            override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
-
-            }
-        }))
+        StopTimerView(
+            MainViewModel(object : Timer {
+                override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
+                }
+            })
+        )
     }
 }
 
@@ -275,11 +294,11 @@ fun LightPreview() {
 @Composable
 fun DarkPreview() {
     MyTheme(darkTheme = true) {
-        StopTimerView(MainViewModel(object: Timer {
-            override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
-
-            }
-
-        }))
+        StopTimerView(
+            MainViewModel(object : Timer {
+                override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
+                }
+            })
+        )
     }
 }
