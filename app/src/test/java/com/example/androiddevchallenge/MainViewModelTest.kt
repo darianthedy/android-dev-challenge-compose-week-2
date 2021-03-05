@@ -159,13 +159,16 @@ class MainViewModelTest {
 
     @Test
     fun startTimer_ImmediatelyFinish() {
+        val inputTimerInMs = (99 * 60 * 60 + 99 * 60 + 99) * 1_000
         coEvery {
-            timer.executeTimer(300_000f, any())
+            timer.executeTimer(inputTimerInMs.toFloat(), any())
         } answers {
-            secondArg<TimerUpdates>().onProgressUpdated(300_000)
+            secondArg<TimerUpdates>().onProgressUpdated(inputTimerInMs.toLong())
         }
 
-        mainViewModel.onUserTimerChanged("300")
+        mainViewModel.onInputHours("99")
+        mainViewModel.onInputMinutes("99")
+        mainViewModel.onInputSeconds("99")
         mainViewModel.onTimerButtonPressed()
 
         assertEquals(1f, mainViewModel.progress.getOrAwaitValue())
@@ -182,7 +185,8 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(200_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed()
 
         assertEquals(0.4f, mainViewModel.progress.getOrAwaitValue())
@@ -200,7 +204,8 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(200_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed() // start
         mainViewModel.onTimerButtonPressed() // pause
 
@@ -219,7 +224,8 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(200_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed() // start
         mainViewModel.onTimerButtonPressed() // pause
 
@@ -246,7 +252,8 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(100_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed()
         mainViewModel.onStopButtonPressed()
 
@@ -264,10 +271,12 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(200_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed()
         mainViewModel.onStopButtonPressed()
-        mainViewModel.onUserTimerChanged("200")
+        mainViewModel.onInputMinutes("3")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed()
 
         assertEquals(1f, mainViewModel.progress.getOrAwaitValue())
@@ -284,9 +293,11 @@ class MainViewModelTest {
             secondArg<TimerUpdates>().onProgressUpdated(500_000)
         }
 
-        mainViewModel.onUserTimerChanged("500")
+        mainViewModel.onInputMinutes("8")
+        mainViewModel.onInputSeconds("20")
         mainViewModel.onTimerButtonPressed()
-        mainViewModel.onUserTimerChanged("200")
+        mainViewModel.onInputMinutes("3")
+        mainViewModel.onInputSeconds("20")
 
         coEvery {
             timer.executeTimer(200_000f, any())

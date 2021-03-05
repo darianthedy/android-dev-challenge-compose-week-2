@@ -92,29 +92,28 @@ class MainViewModel(private val timer: Timer) : ViewModel() {
             this._changeFocusToMinutes.value = true
     }
 
-    @Deprecated("Changed to user input hours minutes and seconds")
-    fun onUserTimerChanged(input: String) {
-        _userTimerInput.value = input
-
-        if (input.length >= 2) {
-            _changeFocusToMinutes.value = true
-        }
-    }
-
     fun onTimerButtonPressed() {
         _isPauseStopVisible.value = true
 
         if (_isRunning.value == false) {
             _isRunning.value = true
+
             if (currentProgress == 0f) {
                 _progress.value = 0f
             }
 
-            val userTimerString = _userTimerInput.value?.replace("[\\D]", "") ?: "0"
-            val userTimer = (userTimerString.toFloatOrNull() ?: 0f)
-            val remaining = userTimer - ((_progress.value ?: 0f) * userTimer)
+            val userTimerHours = _hoursText.value?.replace("[\\D]", "") ?: "0"
+            val userTimerMinutes = _minutesText.value?.replace("[\\D]", "") ?: "0"
+            val userTimerSeconds = _secondsText.value?.replace("[\\D]", "") ?: "0"
+            val timerInSeconds =
+                ((userTimerHours.toFloatOrNull() ?: 0f) * 60 * 60) +
+                    ((userTimerMinutes.toFloatOrNull() ?: 0f) * 60) +
+                    (userTimerSeconds.toFloatOrNull() ?: 0f)
+
+            val remaining = timerInSeconds - ((_progress.value ?: 0f) * timerInSeconds)
+
             countingJob = viewModelScope.launch {
-                timer.executeTimer(remaining * 1_000, getTimerUpdates(userTimer))
+                timer.executeTimer(remaining * 1_000, getTimerUpdates(timerInSeconds))
 
                 if (_progress.value ?: 0f >= 1f) {
                     _isPauseStopVisible.value = false
@@ -130,10 +129,10 @@ class MainViewModel(private val timer: Timer) : ViewModel() {
         }
     }
 
-    private fun getTimerUpdates(userTimer: Float) = object : TimerUpdates {
+    private fun getTimerUpdates(timerInSeconds: Float) = object : TimerUpdates {
         override fun onProgressUpdated(timeElapsedSinceStart: Long) {
-            _progress.value = currentProgress + ((timeElapsedSinceStart / userTimer) / 1_000)
-            _remainingTime.value = (userTimer - ((_progress.value ?: 0f) * userTimer)) * 1_000
+            _progress.value = currentProgress + ((timeElapsedSinceStart / timerInSeconds) / 1_000)
+            _remainingTime.value = (timerInSeconds - ((_progress.value ?: 0f) * timerInSeconds)) * 1_000
         }
     }
 
