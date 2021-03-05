@@ -52,6 +52,112 @@ class MainViewModelTest {
     private val mainViewModel = MainViewModel(timer)
 
     @Test
+    fun `input hours one digit`() {
+        mainViewModel.onInputHours("1")
+
+        assertEquals("1", mainViewModel.hoursText.getOrAwaitValue())
+        assertEquals(false, mainViewModel.changeFocusToMinutes.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input hours two digit`() {
+        mainViewModel.onInputHours("9")
+        mainViewModel.onInputHours("99")
+
+        assertEquals("99", mainViewModel.hoursText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToMinutes.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input hours three digit`() {
+        mainViewModel.onInputHours("9")
+        mainViewModel.onInputHours("99")
+        mainViewModel.onInputHours("999")
+
+        assertEquals("99", mainViewModel.hoursText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToMinutes.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input minutes one digit`() {
+        mainViewModel.onInputMinutes("1")
+
+        assertEquals("1", mainViewModel.minutesText.getOrAwaitValue())
+        assertEquals(false, mainViewModel.changeFocusToSeconds.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input minutes two digit`() {
+        mainViewModel.onInputMinutes("9")
+        mainViewModel.onInputMinutes("99")
+
+        assertEquals("99", mainViewModel.minutesText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToSeconds.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input minutes three digit`() {
+        mainViewModel.onInputMinutes("9")
+        mainViewModel.onInputMinutes("99")
+        mainViewModel.onInputMinutes("999")
+
+        assertEquals("99", mainViewModel.minutesText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToSeconds.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input minutes empty`() {
+        mainViewModel.onInputMinutes("")
+
+        assertEquals("", mainViewModel.minutesText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToHours.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input seconds one digit`() {
+        mainViewModel.onInputSeconds("1")
+
+        assertEquals("1", mainViewModel.secondsText.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input seconds two digit`() {
+        mainViewModel.onInputSeconds("9")
+        mainViewModel.onInputSeconds("99")
+
+        assertEquals("99", mainViewModel.secondsText.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input seconds three digit`() {
+        mainViewModel.onInputSeconds("9")
+        mainViewModel.onInputSeconds("99")
+        mainViewModel.onInputSeconds("999")
+
+        assertEquals("99", mainViewModel.secondsText.getOrAwaitValue())
+    }
+
+    @Test
+    fun `input seconds empty`() {
+        mainViewModel.onInputSeconds("")
+
+        assertEquals("", mainViewModel.secondsText.getOrAwaitValue())
+        assertEquals(true, mainViewModel.changeFocusToMinutes.getOrAwaitValue())
+    }
+
+    @Test
+    fun `onViewCreated after modifying input time`() {
+        mainViewModel.onInputHours("99")
+        mainViewModel.onInputMinutes("99")
+        mainViewModel.onInputMinutes("")
+        mainViewModel.onViewCreated()
+
+        assertEquals(false, mainViewModel.changeFocusToHours.getOrAwaitValue())
+        assertEquals(false, mainViewModel.changeFocusToMinutes.getOrAwaitValue())
+        assertEquals(false, mainViewModel.changeFocusToSeconds.getOrAwaitValue())
+    }
+
+    @Test
     fun startTimer_ImmediatelyFinish() {
         coEvery {
             timer.executeTimer(300_000f, any())

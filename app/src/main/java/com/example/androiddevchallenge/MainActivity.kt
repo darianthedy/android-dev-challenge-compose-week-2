@@ -52,10 +52,13 @@ import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,16 +70,42 @@ import com.example.androiddevchallenge.ui.theme.MyTheme
 @ExperimentalAnimationApi
 @ExperimentalComposeUiApi
 class MainActivity : AppCompatActivity() {
+
     private val mainViewModel by viewModels<MainViewModel> {
         MainViewModelProviderFactory()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val timerFocusRequester = TimerFocusRequester(
+            FocusRequester(),
+            FocusRequester(),
+            FocusRequester()
+        )
+
         setContent {
             MyTheme {
-                MyApp(mainViewModel)
+                MyApp(mainViewModel, timerFocusRequester)
             }
+        }
+
+        mainViewModel.onViewCreated()
+
+        observeViewModel(timerFocusRequester)
+    }
+
+    private fun observeViewModel(timerFocusRequester: TimerFocusRequester) {
+        mainViewModel.changeFocusToHours.observe(this) {
+            if (it) timerFocusRequester.hoursFocusRequester.requestFocus()
+        }
+
+        mainViewModel.changeFocusToMinutes.observe(this) {
+            if (it) timerFocusRequester.minutesFocusRequester.requestFocus()
+        }
+
+        mainViewModel.changeFocusToSeconds.observe(this) {
+            if (it) timerFocusRequester.secondsFocusRequester.requestFocus()
         }
     }
 }
@@ -95,14 +124,21 @@ class MainViewModelProviderFactory : ViewModelProvider.Factory {
 @ExperimentalAnimationApi
 @ExperimentalComposeUiApi
 @Composable
-fun MyApp(mainViewModel: MainViewModel) {
+fun MyApp(
+    mainViewModel: MainViewModel,
+    timerFocusRequester: TimerFocusRequester,
+) {
     Surface(color = MaterialTheme.colors.background) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HeaderView(Modifier.align(Alignment.CenterHorizontally), mainViewModel)
+            HeaderView(
+                Modifier.align(Alignment.CenterHorizontally),
+                mainViewModel,
+                timerFocusRequester
+            )
 
             Spacer(Modifier.size(24.dp))
 
@@ -113,7 +149,11 @@ fun MyApp(mainViewModel: MainViewModel) {
 
 @ExperimentalAnimationApi
 @Composable
-private fun HeaderView(modifier: Modifier, mainViewModel: MainViewModel) {
+private fun HeaderView(
+    modifier: Modifier,
+    mainViewModel: MainViewModel,
+    timerFocusRequester: TimerFocusRequester
+) {
     val isPauseStopButtonVisible by mainViewModel.isPauseStopVisible.observeAsState(false)
 
     Box(modifier) {
@@ -126,7 +166,7 @@ private fun HeaderView(modifier: Modifier, mainViewModel: MainViewModel) {
         AnimatedVisibility(
             visible = !isPauseStopButtonVisible,
         ) {
-            InputTimerView(mainViewModel)
+            InputTimerView(mainViewModel, timerFocusRequester)
         }
     }
 }
@@ -156,25 +196,55 @@ private fun StopTimerView(mainViewModel: MainViewModel) {
 }
 
 @Composable
-private fun InputTimerView(mainViewModel: MainViewModel) {
-    val userTimer by mainViewModel.userTimerInput.observeAsState("")
+private fun InputTimerView(
+    mainViewModel: MainViewModel,
+    timerFocusRequester: TimerFocusRequester,
+) {
+    val hours by mainViewModel.hoursText.observeAsState("")
+    val minutes by mainViewModel.minutesText.observeAsState("")
+    val seconds by mainViewModel.secondsText.observeAsState("")
 
     Row(
         Modifier.width(250.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        Text(
-            "Timer in secs: ",
-            modifier = Modifier.align(Alignment.CenterVertically)
+        TextField(
+            modifier = Modifier
+                .width(60.dp)
+                .focusRequester(timerFocusRequester.hoursFocusRequester),
+            value = hours,
+            label = { Text("hh") },
+            onValueChange = { mainViewModel.onInputHours(it) },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            ),
+            singleLine = true,
         )
 
         Spacer(Modifier.width(16.dp))
 
         TextField(
             modifier = Modifier
-                .width(100.dp),
-            value = userTimer,
-            onValueChange = { mainViewModel.onUserTimerChanged(it) },
+                .width(60.dp)
+                .focusRequester(timerFocusRequester.minutesFocusRequester),
+            value = minutes,
+            label = { Text("mm") },
+            onValueChange = { mainViewModel.onInputMinutes(it) },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            ),
+            singleLine = true,
+        )
+
+        Spacer(Modifier.width(16.dp))
+
+        TextField(
+            modifier = Modifier
+                .width(60.dp)
+                .focusRequester(timerFocusRequester.secondsFocusRequester),
+            value = seconds,
+            label = { Text("ss") },
+            onValueChange = { mainViewModel.onInputSeconds(it) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
             ),
@@ -260,7 +330,9 @@ private fun TimerView(mainViewModel: MainViewModel) {
                         Text(
                             ".$remainingTimeMs",
                             style = MaterialTheme.typography.body2,
-                            modifier = Modifier.align(Alignment.Bottom).padding(bottom = 2.dp),
+                            modifier = Modifier
+                                .align(Alignment.Bottom)
+                                .padding(bottom = 2.dp),
                         )
                     }
 
@@ -280,12 +352,31 @@ private fun TimerView(mainViewModel: MainViewModel) {
 @Composable
 fun LightPreview() {
     MyTheme {
-        StopTimerView(
-            MainViewModel(object : Timer {
-                override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
-                }
-            })
-        )
+        Row(
+            Modifier.width(250.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Timer in secs: ",
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+
+            Spacer(Modifier.width(16.dp))
+
+            val focusRequester = remember { FocusRequester() }
+
+            TextField(
+                modifier = Modifier
+                    .width(100.dp)
+                    .focusRequester(focusRequester),
+                value = "",
+                onValueChange = { },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                singleLine = true,
+            )
+        }
     }
 }
 
@@ -294,11 +385,27 @@ fun LightPreview() {
 @Composable
 fun DarkPreview() {
     MyTheme(darkTheme = true) {
-        StopTimerView(
-            MainViewModel(object : Timer {
-                override suspend fun executeTimer(duration: Float, timerUpdates: TimerUpdates) {
-                }
-            })
-        )
+        Row(
+            Modifier.width(250.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Timer in secs: ",
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+
+            Spacer(Modifier.width(16.dp))
+
+            TextField(
+                modifier = Modifier
+                    .width(100.dp),
+                value = "",
+                onValueChange = { },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                singleLine = true,
+            )
+        }
     }
 }

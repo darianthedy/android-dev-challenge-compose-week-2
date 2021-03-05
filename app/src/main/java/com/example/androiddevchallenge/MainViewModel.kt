@@ -24,11 +24,28 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(private val timer: Timer) : ViewModel() {
 
+    private val _changeFocusToHours = MutableLiveData(false)
+    val changeFocusToHours: LiveData<Boolean> = _changeFocusToHours
+
+    private val _hoursText = MutableLiveData("")
+    val hoursText: LiveData<String> = _hoursText
+
+    private val _changeFocusToMinutes = MutableLiveData(false)
+    val changeFocusToMinutes: LiveData<Boolean> = _changeFocusToMinutes
+
+    private val _minutesText = MutableLiveData("")
+    val minutesText: LiveData<String> = _minutesText
+
+    private val _changeFocusToSeconds = MutableLiveData(false)
+    val changeFocusToSeconds: LiveData<Boolean> = _changeFocusToSeconds
+
+    private val _secondsText = MutableLiveData("")
+    val secondsText: LiveData<String> = _secondsText
+
     private val _progress = MutableLiveData(0f)
     val progress: LiveData<Float> = _progress
 
     private val _userTimerInput = MutableLiveData("")
-    val userTimerInput: LiveData<String> = _userTimerInput
 
     private val _isPauseStopVisible = MutableLiveData(false)
     val isPauseStopVisible: LiveData<Boolean> = _isPauseStopVisible
@@ -42,8 +59,46 @@ class MainViewModel(private val timer: Timer) : ViewModel() {
     private var currentProgress = 0f
     private var countingJob: Job? = null
 
+    fun onViewCreated() {
+        this._changeFocusToHours.value = false
+        this._changeFocusToMinutes.value = false
+        this._changeFocusToSeconds.value = false
+    }
+
+    fun onInputHours(hoursText: String) {
+        if (hoursText.length <= 2)
+            this._hoursText.value = hoursText
+
+        if (hoursText.length >= 2)
+            this._changeFocusToMinutes.value = true
+    }
+
+    fun onInputMinutes(minutesText: String) {
+        if (minutesText.length <= 2)
+            this._minutesText.value = minutesText
+
+        if (minutesText.isEmpty())
+            this._changeFocusToHours.value = true
+
+        if (minutesText.length >= 2)
+            this._changeFocusToSeconds.value = true
+    }
+
+    fun onInputSeconds(secondsText: String) {
+        if (secondsText.length <= 2)
+            this._secondsText.value = secondsText
+
+        if (secondsText.isEmpty())
+            this._changeFocusToMinutes.value = true
+    }
+
+    @Deprecated("Changed to user input hours minutes and seconds")
     fun onUserTimerChanged(input: String) {
         _userTimerInput.value = input
+
+        if (input.length >= 2) {
+            _changeFocusToMinutes.value = true
+        }
     }
 
     fun onTimerButtonPressed() {
